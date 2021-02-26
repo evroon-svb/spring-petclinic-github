@@ -1,0 +1,95 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: build-application
+  annotations:
+    description: Generic build template
+  labels:
+    app: ${APPLICATION_NAME}
+objects:
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      namespace: ${BUILD_PROJECT_NAME}
+      annotations:
+        description: Keeps track of changes in the image
+      name: ${APPLICATION_NAME}
+  - apiVersion: v1
+    kind: BuildConfig
+    metadata:
+      annotations:
+        description: Defines how to build the application
+        template.alpha.openshift.io/wait-for-ready: "true"
+      labels:
+        app: ${APPLICATION_NAME}
+        template: ${APPLICATION_NAME}
+      name: ${APPLICATION_NAME}
+      namespace: ${BUILD_PROJECT_NAME}
+    spec:
+      successfullBuildsHistoryLimit: 6
+      failedBuildHistoryLimit: 2
+      nodeSelector: null
+      output:
+        to:
+          kind: ImageStreamTag
+          name: ${APPLICATION_NAME}:${GIT_COMMIT_SHA}
+      postcommit: {}
+      resources: {}
+      runPolicy: Serial
+      source:
+        type: Git
+        git:
+          ref: ${GIT_SOURCE_REF}
+          uri: ${GIT_SOURCE_URL}
+        sourceSecret:
+          name: ${GIT_SOURCE_SECRET}
+      strategy:
+        sourceStrategy:
+          env:
+            - name: MAVEN_MIRROR_URL
+              value: ${MAVEN_MIRROR_URL}
+          from:
+            kind: ImageStreamTag
+            name: ${BUILDER_IMAGE_TYPE}
+            namespace: openshift
+          type: source
+parameters:
+  - name: APPLICATION_NAME
+    displayName: Application Name
+    description: Name of the application
+    required: true
+    #value:
+  - name: GIT_SOURCE_URL
+    displayName: Git URL
+    description: URL of the git repository
+    required: true
+    #value:
+  - name: GIT_SOURCE_REF
+    displayName: Git source reference
+    description: Git branch or tag to use
+    required: true
+    #value:
+  - name: GIT_SOURCE_SECRET
+    displayName: Git source secret
+    description: Secret to use when accessing git
+    required: true
+    #value:
+  - name: GIT_COMMIT_SHA
+    displayName: Git commit hash
+    description: Git commit hash to use when tagging images
+    required: true
+    #value:
+  - name: BUILDER_IMAGE_TYPE
+    displayName: Builder image type
+    description: Builder images type to use e.g. Java or Node
+    required: true
+  - name: NPM_MIRROR_URL
+    displayName: NPM mirror URL
+    description: URL of the NPM repository to use.
+    required: false
+  - name: MAVEN_MIRROR_URL
+    displayName: Maven mirror URL
+    description: URL of the Maven repository to use.
+    required: false
+  - name: BUILD_PROJECT_NAME
+    displayName: Project or namespace to use

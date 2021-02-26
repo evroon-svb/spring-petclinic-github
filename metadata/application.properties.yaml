@@ -1,0 +1,9 @@
+---
+general:
+  openshfit-project-key: itt-dev
+  application-name: spring-petclinic
+  builder-image-type: java:latest
+  build-project-name: itt-dev 
+  git-source-secret: ssh-team-springpetclinic
+  target-cluster: cluster1
+
